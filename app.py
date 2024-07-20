@@ -1,12 +1,12 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from flask import Flask, render_template
 from datetime import datetime
 
 # Load environment variables
-load_dotenv()
+# load_dotenv()
 
 app = Flask(__name__)
 
