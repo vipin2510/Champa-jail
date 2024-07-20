@@ -3,90 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CHAMPA JAIL</title>
+    <title>पुलिस स्टेशन चांपा जेल रिहाई</title>
     <style>
         body {
-            background-color: #000;
-            color: #fff;
             font-family: 'Courier New', monospace;
             margin: 0;
             padding: 20px;
-            font-size: 18px;
+            background-color: #000;
+            color: #fff;
         }
         h1 {
             color: #ff6600;
             text-align: center;
+            font-size: 24px;
             margin-bottom: 10px;
-            font-size: 2.5em;
-        }
-        .time {
-            color: #ff6600;
-            text-align: right;
-            font-size: 1.5em;
-            margin-bottom: 20px;
         }
         table {
-            width: 100%;
             border-collapse: collapse;
+            width: 100%;
+            background-color: #000;
         }
         th, td {
-            padding: 12px;
+            border: 1px solid #333;
+            padding: 8px;
             text-align: left;
-            border-bottom: 1px solid #333;
+            font-size: 18px;
         }
         th {
-            background-color: #333;
-            color: #fff;
-            font-size: 1.2em;
+            background-color: #000;
+            color: #ff6600;
+            font-weight: bold;
         }
         tr:nth-child(even) {
             background-color: #111;
         }
-        .col1 { color: #ff00ff; }
-        .col2 { color: #ffff00; }
-        .col3 { color: #00ffff; }
-        .col4 { color: #00ff00; }
-        .col5 { color: #ff9900; }
+        .current-time {
+            text-align: right;
+            margin-bottom: 10px;
+            color: #ff6600;
+            font-size: 18px;
+        }
+        .date-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .date-selector input, .date-selector button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #ff6600;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+        .error-message {
+            color: #ff0000;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .क्रमांक { color: #ff00ff; }
+        .अपराध { color: #ff6600; }
+        .नाम { color: #ffff00; }
+        .पिता.नाम { color: #00ff00; }
+        .पता { color: #00ffff; }
     </style>
-    <script>
-        function updateTime() {
-            var now = new Date();
-            var time = now.getHours().toString().padStart(2, '0') + ':' + 
-                       now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('current-time').textContent = time;
-        }
-
-        function refreshPage() {
-            location.reload();
-        }
-
-        // Update time every second
-        setInterval(updateTime, 3*1000);
-
-        // Refresh page every 5 minutes
-        setInterval(refreshPage, 60*1000);
-    </script>
 </head>
 <body>
-    <h1>CHAMPA JAIL</h1>
-    <div class="time">Time <span id="current-time">{{ current_time }}</span></div>
-    <table>
-        <thead>
+    <h1>पुलिस स्टेशन चांपा जेल रिहाई: {{ release_date }}</h1>
+    <p class="current-time">Last Change: {{ current_time }}</p>
+    
+    <form class="date-selector" method="post">
+        <label for="selected_date">Select Date:</label>
+        <input type="date" id="selected_date" name="selected_date" value="{{ selected_date }}" required>
+        <button type="submit">Show Data</button>
+    </form>
+    
+    {% if error_message %}
+        <p class="error-message">{{ error_message }}</p>
+    {% else %}
+        <table>
             <tr>
                 {% for header in headers %}
-                <th>{{ header }}</th>
+                    <th class="{{ header }}">{{ header }}</th>
                 {% endfor %}
             </tr>
-        </thead>
-        <tbody>
             {% for row in data %}
-            <tr>
-                {% for cell in row %}
-                <td class="col{{ loop.index }}">{{ cell }}</td>
-                {% endfor %}
-            </tr>
+                <tr>
+                    {% for cell in row %}
+                        <td class="{{ headers[loop.index0] }}">{{ cell }}</td>
+                    {% endfor %}
+                </tr>
             {% endfor %}
-        </tbody>
-    </table>
+        </table>
+    {% endif %}
+    <script>
+        // Auto-refresh the page every 1 minute
+        setTimeout(function() {
+            location.reload();
+        }, 60000);
+
+        // Alternative method to check for changes (requires server-side implementation)
+        function checkForChanges() {
+            fetch('/check_changes')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasChanges) {
+                        location.reload();
+                    } else {
+                        setTimeout(checkForChanges, 10000); // Check again after 10 seconds
+                    }
+                });
+        }
+        // Uncomment the line below to use the alternative method
+        // setTimeout(checkForChanges, 10000);
+    </script>
 </body>
 </html>
