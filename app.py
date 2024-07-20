@@ -25,13 +25,6 @@ credentials = {
     "client_x509_cert_url": os.getenv("GOOGLE_CLIENT_X509_CERT_URL")
 }
 
-# Debug: Print out the credentials (except the private key)
-for key, value in credentials.items():
-    if key != "private_key":
-        print(f"{key}: {value}")
-    else:
-        print("private_key: [REDACTED]")
-
 creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials, scope)
 client = gspread.authorize(creds)
 
@@ -39,7 +32,7 @@ client = gspread.authorize(creds)
 def display_sheet():
     try:
         # Open the spreadsheet
-        sheet = client.open_by_key('1EWc4ZEPuE3oLvHmuQ5_4Bb7uR3Gy8bwYlRxdbuUf_4s').worksheet('Sheet1')
+        sheet = client.open_by_key('1u0wz3jnjb50T_6D8YCqHnpaT7Cejyg5Rafu7FBA1vZk').worksheet('DB-Naxal')
 
         # Get all values
         rows = sheet.get_all_values()
@@ -53,8 +46,6 @@ def display_sheet():
 
         return render_template('sheet.html', headers=headers, data=data, current_time=current_time)
     except Exception as e:
-        print(f"Error: {str(e)}")
         return f"An error occurred: {str(e)}"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Remove the if __name__ == '__main__': block
