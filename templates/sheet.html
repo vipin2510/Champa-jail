@@ -3,31 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>पुलिस थाना चांपा गिरफ्तार व्यक्तियों की सूची</title>
+    <title>गिरफ्तार व्यक्तियों की सूची</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: blue;
             color: white;
             font-size: 18px;
+            margin: 0;
+            padding: 20px;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid white;
-            padding: 10px;
-            text-align: left;
-        }
-        .table-container {
-            max-height: 400px;
-            overflow-y: auto;
+        h1 {
+            text-align: center;
         }
         #lastChange {
             text-align: right;
@@ -36,13 +27,45 @@
         .date-selector {
             margin-bottom: 20px;
         }
+        .table-container {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background-color: #0000AA;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        th, td {
+            border: 1px solid white;
+            padding: 10px;
+            text-align: left;
+        }
+        th:nth-child(1), td:nth-child(1),
+        th:nth-child(2), td:nth-child(2),
+        th:nth-child(4), td:nth-child(4) {
+            width: 15%;
+        }
+        th:nth-child(3), td:nth-child(3),
+        th:nth-child(5), td:nth-child(5) {
+            width: 27.5%;
+        }
+        td {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>पुलिस थाना चांपा गिरफ्तार व्यक्तियों की सूची</h1>
+        <h1>गिरफ्तार व्यक्तियों की सुचना पटल धारा 37 बी एन एस एस</h1>
         
-        <div id="lastChange">Last Change: {{ current_time }}</div>
+        <div id="lastChange">Last Data Fetch: {{ fetch_time }}</div>
         
         <div class="date-selector">
             <form method="post">
@@ -79,20 +102,17 @@
     </div>
 
     <script>
-        const tableContainer = document.querySelector('.table-container');
-        let scrollPosition = 0;
-        const rowHeight = 50; // Approximate height of a row
-        const visibleRows = 8;
-
-        function autoScroll() {
-            scrollPosition += 1;
-            if (scrollPosition > tableContainer.scrollHeight - tableContainer.clientHeight) {
-                scrollPosition = 0;
-            }
-            tableContainer.scrollTop = scrollPosition;
+        function checkForChanges() {
+            fetch('/check_changes')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasChanges) {
+                        location.reload();
+                    }
+                });
         }
 
-        setInterval(autoScroll, 100);
+        setInterval(checkForChanges, 30000); // Check every 30 seconds
     </script>
 </body>
 </html>
