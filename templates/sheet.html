@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>गिरफ्तार व्यक्तियों की सूची</title>
+    <title>गिरफ्तार व्यक्तियों की सूचना पटल धारा 37 बी एन एस एस</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: blue;
             color: white;
-            font-size: 18px;
+            font-size: 20px;
             margin: 0;
             padding: 20px;
         }
@@ -19,17 +19,28 @@
         }
         h1 {
             text-align: center;
+            font-size: 28px;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
         }
         #lastChange {
             text-align: right;
-            margin-bottom: 10px;
         }
         .date-selector {
-            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .date-selector label, .date-selector input, .date-selector button {
+            margin-right: 10px;
         }
         .table-container {
-            max-height: 70vh;
-            overflow-y: auto;
+            height: 70vh;
+            overflow: hidden;
+            position: relative;
         }
         table {
             width: 100%;
@@ -43,36 +54,35 @@
         }
         th, td {
             border: 1px solid white;
-            padding: 10px;
+            padding: 15px;
             text-align: left;
+            font-size: 22px;
         }
         th:nth-child(1), td:nth-child(1),
         th:nth-child(2), td:nth-child(2),
-        th:nth-child(4), td:nth-child(4) {
-            width: 15%;
-        }
-        th:nth-child(3), td:nth-child(3),
         th:nth-child(5), td:nth-child(5) {
-            width: 27.5%;
+            text-align: center;
         }
-        td {
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
+        th:nth-child(1), td:nth-child(1) { width: 10%; }
+        th:nth-child(2), td:nth-child(2) { width: 20%; }
+        th:nth-child(3), td:nth-child(3) { width: 30%; }
+        th:nth-child(4), td:nth-child(4) { width: 20%; }
+        th:nth-child(5), td:nth-child(5) { width: 20%; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>गिरफ्तार व्यक्तियों की सुचना पटल धारा 37 बी एन एस एस</h1>
+        <h1>गिरफ्तार व्यक्तियों की सूचना पटल धारा 37 बी एन एस एस</h1>
         
-        <div id="lastChange">Last Data Fetch: {{ fetch_time }}</div>
-        
-        <div class="date-selector">
-            <form method="post">
-                <label for="selected_date">Select Date:</label>
-                <input type="date" id="selected_date" name="selected_date" value="{{ selected_date }}">
-                <button type="submit">Show Data</button>
-            </form>
+        <div class="header-row">
+            <div class="date-selector">
+                <form method="post" id="dateForm">
+                    <label for="selected_date">Select Date:</label>
+                    <input type="date" id="selected_date" name="selected_date" value="{{ selected_date }}">
+                    <button type="submit">Show Data</button>
+                </form>
+            </div>
+            <div id="lastChange">Last Data Fetch: <span id="fetchTime">{{ fetch_time }}</span></div>
         </div>
 
         {% if error_message %}
@@ -87,7 +97,7 @@
                             {% endfor %}
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tableBody">
                         {% for row in data %}
                             <tr>
                                 {% for cell in row %}
@@ -102,17 +112,47 @@
     </div>
 
     <script>
-        function checkForChanges() {
+        let scrollPosition = 0;
+        const tableBody = document.getElementById('tableBody');
+        const tableContainer = document.querySelector('.table-container');
+
+        function autoScroll() {
+            if (scrollPosition >= tableBody.scrollHeight - tableContainer.clientHeight) {
+                scrollPosition = 0;
+            } else {
+                scrollPosition += 1;
+            }
+            tableContainer.scrollTop = scrollPosition;
+        }
+
+        setInterval(autoScroll, 50);
+
+        function updateData() {
             fetch('/check_changes')
                 .then(response => response.json())
                 .then(data => {
                     if (data.hasChanges) {
                         location.reload();
+                    } else {
+                        document.getElementById('fetchTime').textContent = new Date().toLocaleTimeString();
                     }
                 });
         }
 
-        setInterval(checkForChanges, 30000); // Check every 30 seconds
+        setInterval(updateData, 30000);
+
+        document.getElementById('dateForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.body.innerHTML = html;
+            });
+        });
     </script>
 </body>
 </html>
