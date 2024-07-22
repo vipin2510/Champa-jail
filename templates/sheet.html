@@ -3,118 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>पुलिस स्टेशन चांपा जेल रिहाई</title>
+    <title>पुलिस थाना चांपा गिरफ्तार व्यक्तियों की सूची</title>
     <style>
         body {
-            font-family: 'Courier New', monospace;
-            margin: 0;
-            padding: 20px;
-            background-color: #000;
-            color: #fff;
+            font-family: Arial, sans-serif;
+            background-color: blue;
+            color: white;
+            font-size: 18px;
         }
-        h1 {
-            color: #ff6600;
-            text-align: center;
-            font-size: 24px;
-            margin-bottom: 10px;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
         table {
-            border-collapse: collapse;
             width: 100%;
-            background-color: #000;
+            border-collapse: collapse;
         }
         th, td {
-            border: 1px solid #333;
-            padding: 8px;
+            border: 1px solid white;
+            padding: 10px;
             text-align: left;
-            font-size: 18px;
         }
-        th {
-            background-color: #000;
-            color: #ff6600;
-            font-weight: bold;
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
         }
-        tr:nth-child(even) {
-            background-color: #111;
-        }
-        .current-time {
+        #lastChange {
             text-align: right;
             margin-bottom: 10px;
-            color: #ff6600;
-            font-size: 18px;
         }
         .date-selector {
             margin-bottom: 20px;
-            text-align: center;
         }
-        .date-selector input, .date-selector button {
-            background-color: #333;
-            color: #fff;
-            border: 1px solid #ff6600;
-            padding: 5px 10px;
-            font-size: 16px;
-        }
-        .error-message {
-            color: #ff0000;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 18px;
-        }
-        .क्रमांक { color: #ff00ff; }
-        .अपराध { color: #ff6600; }
-        .नाम { color: #ffff00; }
-        .पिता.नाम { color: #00ff00; }
-        .पता { color: #00ffff; }
     </style>
 </head>
 <body>
-    <h1>पुलिस स्टेशन चांपा जेल रिहाई: {{ release_date }}</h1>
-    <p class="current-time">Last Change: {{ current_time }}</p>
-    
-    <form class="date-selector" method="post">
-        <label for="selected_date">Select Date:</label>
-        <input type="date" id="selected_date" name="selected_date" value="{{ selected_date }}" required>
-        <button type="submit">Show Data</button>
-    </form>
-    
-    {% if error_message %}
-        <p class="error-message">{{ error_message }}</p>
-    {% else %}
-        <table>
-            <tr>
-                {% for header in headers %}
-                    <th class="{{ header }}">{{ header }}</th>
-                {% endfor %}
-            </tr>
-            {% for row in data %}
-                <tr>
-                    {% for cell in row %}
-                        <td class="{{ headers[loop.index0] }}">{{ cell }}</td>
-                    {% endfor %}
-                </tr>
-            {% endfor %}
-        </table>
-    {% endif %}
-    <script>
-        // Auto-refresh the page every 1 minute
-        setTimeout(function() {
-            location.reload();
-        }, 60000);
+    <div class="container">
+        <h1>पुलिस थाना चांपा गिरफ्तार व्यक्तियों की सूची</h1>
+        
+        <div id="lastChange">Last Change: {{ current_time }}</div>
+        
+        <div class="date-selector">
+            <form method="post">
+                <label for="selected_date">Select Date:</label>
+                <input type="date" id="selected_date" name="selected_date" value="{{ selected_date }}">
+                <button type="submit">Show Data</button>
+            </form>
+        </div>
 
-        // Alternative method to check for changes (requires server-side implementation)
-        function checkForChanges() {
-            fetch('/check_changes')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.hasChanges) {
-                        location.reload();
-                    } else {
-                        setTimeout(checkForChanges, 10000); // Check again after 10 seconds
-                    }
-                });
+        {% if error_message %}
+            <p>{{ error_message }}</p>
+        {% else %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            {% for header in headers %}
+                                <th>{{ header }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in data %}
+                            <tr>
+                                {% for cell in row %}
+                                    <td>{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const tableContainer = document.querySelector('.table-container');
+        let scrollPosition = 0;
+        const rowHeight = 50; // Approximate height of a row
+        const visibleRows = 8;
+
+        function autoScroll() {
+            scrollPosition += 1;
+            if (scrollPosition > tableContainer.scrollHeight - tableContainer.clientHeight) {
+                scrollPosition = 0;
+            }
+            tableContainer.scrollTop = scrollPosition;
         }
-        // Uncomment the line below to use the alternative method
-        // setTimeout(checkForChanges, 10000);
+
+        setInterval(autoScroll, 100);
     </script>
 </body>
 </html>

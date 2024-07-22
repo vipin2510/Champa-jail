@@ -56,27 +56,28 @@ def display_sheet():
         
         # Filter data for the selected date
         filtered_data = []
-        for idx, row in enumerate(rows[1:], start=1):
+        for row in rows[1:]:
             try:
                 row_date = datetime.strptime(row[-1], "%m/%d/%Y")
                 if row_date.date() == selected_date_obj.date():
-                    filtered_data.append([idx] + row[1:5])  # Add serial number and exclude first and last columns
+                    filtered_data.append(row[1:5])  # Exclude first and last columns
             except ValueError:
                 continue  # Skip rows with invalid date format
         
+        # Add serial numbers starting from 1 for each day
+        filtered_data = [[i+1] + row for i, row in enumerate(filtered_data)]
+        
         # Get current date and time
-        current_date = datetime.now().strftime("%d/%m/%Y")
         current_time = last_modified_time.strftime("%H:%M")
         
         # Check if data exists for the selected date
         if not filtered_data:
             error_message = f"Data not found for {selected_date_obj.strftime('%d/%m/%Y')}"
             return render_template('sheet.html', headers=headers, data=[], current_time=current_time, 
-                                   release_date=current_date, error_message=error_message, selected_date=selected_date)
+                                   error_message=error_message, selected_date=selected_date)
         
         return render_template('sheet.html', headers=['क्रमांक'] + headers, data=filtered_data, 
-                               current_time=current_time, release_date=selected_date_obj.strftime("%d/%m/%Y"),
-                               selected_date=selected_date)
+                               current_time=current_time, selected_date=selected_date)
     except Exception as e:
         return f"An error occurred: {str(e)}"
 
