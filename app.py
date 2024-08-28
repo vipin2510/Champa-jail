@@ -1,9 +1,13 @@
-from flask import Flask, render_template, request, jsonify
-from datetime import datetime, timedelta
+from flask import Flask, render_template, request, jsonify, redirect, send_file
+from datetime import datetime
 import os
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-import json
+from googleapiclient.discovery import build
+import io
+import requests
+from googleapiclient.http import MediaIoBaseDownload
+import logging
 
 # Check if we're running on Vercel
 ON_VERCEL = os.environ.get('VERCEL')
@@ -12,6 +16,9 @@ ON_VERCEL = os.environ.get('VERCEL')
 if not ON_VERCEL:
     from dotenv import load_dotenv
     load_dotenv()
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
 
 # Set up credentials using environment variables
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
@@ -30,26 +37,40 @@ credentials = {
 
 creds = ServiceAccountCredentials.from_json_keyfile_dict(credentials, scope)
 client = gspread.authorize(creds)
+drive_service = build('drive', 'v3', credentials=creds)
 
 app = Flask(__name__)
 last_fetch_time = None
 
+def get_file_id_from_url(url):
+    file_id = None
+    if 'drive.google.com' in url:
+        if '/file/d/' in url:
+            file_id = url.split('/file/d/')[1].split('/')[0]
+        elif 'id=' in url:
+            file_id = url.split('id=')[1].split('&')[0]
+    return file_id
+
 def get_sheet_data(selected_date):
-    sheet = client.open_by_key('1EWc4ZEPuE3oLvHmuQ5_4Bb7uR3Gy8bwYlRxdbuUf_4s').worksheet('Sheet1')
+    sheet = client.open_by_key('1JfJLJv56Q-XTGzONMqS7sF5hfAhK2fgZX36W3bHvz4w').worksheet('Sheet1')
     rows = sheet.get_all_values()
-    headers = ['क्रमांक'] + rows[0][1:5]  # Exclude the first and last columns
+    headers = ['क्रमांक'] + rows[0][1:5] + ['फोटो']
     
     selected_date_obj = datetime.strptime(selected_date, "%Y-%m-%d")
     
     filtered_data = []
     for row in rows[1:]:
         try:
-            row_date = datetime.strptime(row[-1], "%m/%d/%Y")
+            row_date = datetime.strptime(row[-2], "%m/%d/%Y")
             if row_date.date() == selected_date_obj.date():
-                filtered_data.append(row[1:5])  # Exclude the first and last columns
+                photo_url = row[-1]
+                file_id = get_file_id_from_url(photo_url)
+                if file_id:
+                    photo_url = f'/get_image/{file_id}'
+                filtered_data.append(row[1:5] + [photo_url])
         except ValueError:
             app.logger.warning(f"Invalid date format in row: {row}")
-            continue  # Skip rows with invalid date format
+            continue
     
     filtered_data = [[i+1] + row for i, row in enumerate(filtered_data)]
     
@@ -79,12 +100,30 @@ def display_sheet():
         app.logger.error(f"An error occurred: {str(e)}")
         return f"An error occurred: {str(e)}"
 
+# Fetch and serve the image file using the Google Drive API
+@app.route('/get_image/<file_id>')
+def get_image(file_id):
+    try:
+        request = drive_service.files().get_media(fileId=file_id)
+        fh = io.BytesIO()
+        downloader = MediaIoBaseDownload(fh, request)
+
+        done = False
+        while not done:
+            status, done = downloader.next_chunk()
+
+        fh.seek(0)
+        return send_file(fh, mimetype='image/jpeg', as_attachment=False)
+    except Exception as e:
+        app.logger.error(f"Error fetching image: {str(e)}")
+        return redirect('/static/placeholder.png')
+
 @app.route('/check_changes', methods=['POST'])
 def check_changes():
     global last_fetch_time
     try:
         selected_date = request.json.get('selected_date', datetime.now().strftime("%Y-%m-%d"))
-        sheet = client.open_by_key('1EWc4ZEPuE3oLvHmuQ5_4Bb7uR3Gy8bwYlRxdbuUf_4s').worksheet('Sheet1')
+        sheet = client.open_by_key('1PUDas9d9cbRW-rxZTaaTPj_je_A_ELo8-dqTMjz8qMY').worksheet('Sheet1')
         current_modified_time = sheet.updated
         
         if current_modified_time != last_fetch_time:

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Sheet Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: blue;
+            color: white;
+            font-size: 20px;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 28px;
+        }
+        .table-container {
+            height: 70vh;
+            overflow: hidden;
+            position: relative;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        thead {
+            background-color: #0000AA;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        th, td {
+            border: 1px solid white;
+            padding: 15px;
+            text-align: left;
+            font-size: 22px;
+        }
+        td img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            transition: transform 0.3s ease-in-out;
+        }
+        td img:hover {
+            transform: scale(1.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="sheetDisplay"></div>
+    </div>
+    <script>
+        const allSheetData = JSON.parse('{{ sheets_data | tojson | safe }}');
+        let currentSheetIndex = 0;
+
+        function displaySheet(sheetData) {
+            const sheetDisplay = document.getElementById('sheetDisplay');
+            sheetDisplay.innerHTML = `
+                <h1>${sheetData.title}</h1>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                ${sheetData.headers.map(header => `<th>${header}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sheetData.data.map(row => `
+                                <tr>
+                                    ${row.map(cell => {
+                                        return cell.includes('/get_image/')
+                                            ? `<td><img src="${cell}" alt="Photo"></td>`
+                                            : `<td>${cell}</td>`;
+                                    }).join('')}
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function rotateSheets() {
+            displaySheet(allSheetData[currentSheetIndex]);
+            currentSheetIndex = (currentSheetIndex + 1) % allSheetData.length;
+            setTimeout(rotateSheets, allSheetData[currentSheetIndex].time_of_display * 1000);
+        }
+
+        rotateSheets();
+    </script>
+</body>
+</html>
